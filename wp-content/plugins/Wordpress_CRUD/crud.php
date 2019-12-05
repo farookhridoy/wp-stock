@@ -1,11 +1,10 @@
 <?php
 /*
-Plugin Name: CRUD Application
-Plugin URI: https://github.com/iamersudip/Wordpress_CRUD_Plugin.git
-Description: A Plugin For WordPress CRUD ( Create, Read, Update & Delete ) Application Using Ajax & WP List Table
-Author: Sudip Kumar Paul
-Author URI: https://github.com/iamersudip
-Version: 1.0.0
+   Plugin Name: Stock Data Scrape
+   description: A plugin to create admin sideber
+   Version: 1.0
+   Author: GM Hridoy
+   Author URI: https://github.com/gmfaruk
 */
 
 global $wpdb;

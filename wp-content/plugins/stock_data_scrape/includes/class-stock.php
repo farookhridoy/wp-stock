@@ -3,13 +3,15 @@
 /**
  * Admin Menu
  */
-class Stock_Data_Scrape {
+class Stock {
 
     /**
      * Kick-in the class
      */
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+
+        define('Stock_PLUGIN_PATH', plugin_dir_path( __FILE__ ));
     }
 
     /**
@@ -20,9 +22,10 @@ class Stock_Data_Scrape {
     public function admin_menu() {
 
         /** Top Menu **/
-        add_menu_page( __( 'Stock Data Scrape', 'wedevs' ), __( 'Stock Data Scrape', 'wedevs' ), 'manage_options', 'stock_data_scrape', array( $this, 'plugin_page' ), 'dashicons-groups', null );
+        add_menu_page( 'Stock', 'Stock', 'manage_options', 'stock', array( $this, 'plugin_page' ), 'dashicons-groups', null );
 
-        add_submenu_page( 'stock_data_scrape', __( 'Stock Data Scrape', 'wedevs' ), __( 'Stock Data Scrape', 'wedevs' ), 'manage_options', 'stock_data_scrape', array( $this, 'plugin_page' ) );
+        add_submenu_page( 'stock', 'Stock', 'Stock', 'manage_options', 'stock', array( $this, 'plugin_page' ) );
+        //add_submenu_page( 'stock', 'Stock', 'Scraping', 'manage_options', 'stock-scraping', array( $this, 'scrping_page' ) );
     }
 
     /**
@@ -30,11 +33,22 @@ class Stock_Data_Scrape {
      *
      * @return void
      */
-    public function plugin_page() { 
+    public function plugin_page() {
+        global $wpdb;
+        
         $action = isset( $_GET['action'] ) ? $_GET['action'] : 'list';
         $id     = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
 
+       
+
         switch ($action) {
+            case 'delete':
+
+                $delete_return = stock_delete_stock($id);
+                
+                $template = dirname( __FILE__ ) . '/views/stock-list.php';
+                break;
+
             case 'view':
 
                 $template = dirname( __FILE__ ) . '/views/stock-single.php';
@@ -56,5 +70,13 @@ class Stock_Data_Scrape {
         if ( file_exists( $template ) ) {
             include $template;
         }
+
     }
+
+    /*function scrping_page() {
+
+          require_once(Stock_PLUGIN_PATH.'/scrapingfile/simple_html_dom.php');
+
+          include dirname( __FILE__ ) . '/views/scrap-data-list.php';
+    }*/
 }
