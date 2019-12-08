@@ -1,6 +1,6 @@
 <?php
 /*
-   Plugin Name: Stock Data Scrape
+   Plugin Name: Wordpress Crud
    description: A plugin to create admin sideber
    Version: 1.0
    Author: GM Hridoy

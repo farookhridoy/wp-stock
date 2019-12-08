@@ -25,7 +25,8 @@ class Stock {
         add_menu_page( 'Stock', 'Stock', 'manage_options', 'stock', array( $this, 'plugin_page' ), 'dashicons-groups', null );
 
         add_submenu_page( 'stock', 'Stock', 'Stock', 'manage_options', 'stock', array( $this, 'plugin_page' ) );
-        //add_submenu_page( 'stock', 'Stock', 'Scraping', 'manage_options', 'stock-scraping', array( $this, 'scrping_page' ) );
+        add_submenu_page( 'stock', 'Stock', 'Scraping', 'manage_options', 'stock-scraping', array( $this, 'scrping_page' ) );
+        add_submenu_page( 'stock', 'Stock', 'All Stock File', 'manage_options', 'stock-file-list', array( $this, 'scrping_file_list' ) );
     }
 
     /**
@@ -73,10 +74,14 @@ class Stock {
 
     }
 
-    /*function scrping_page() {
+    function scrping_page() {
 
-          require_once(Stock_PLUGIN_PATH.'/scrapingfile/simple_html_dom.php');
+         include dirname( __FILE__ ) . '/views/scrap-data-list-duplicate.php';
+    }
 
-          include dirname( __FILE__ ) . '/views/scrap-data-list.php';
-    }*/
+    function scrping_file_list(){
+
+        include dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
+
+    }
 }
