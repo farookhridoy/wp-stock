@@ -39,27 +39,27 @@ class StockTable extends \WP_List_Table {
      * @return string
      */
     function column_default( $item, $column_name ) {
+        $myArray = json_decode($item->option_value, true);
 
         switch ( $column_name ) {
-         
-            case 'option_name':
-                $myArray = json_decode($item->option_value, true);
-                
-                foreach ($myArray as $k=> $value) {
+            
+             case 'option_name':
+               
+                 foreach ($myArray as $k=> $value) {
 
-                 if($k == '0'){
-
+                 if($k== 'op_name'){
+                     
                     return $value;
                 }
             }
-           
+                
 
             case 'option_value':
-                $myArray = json_decode($item->option_value, true);
+               
                 
                 foreach ($myArray as $k=> $value) {
 
-                 if($k== '1'){
+                 if($k== 'option_value'){
                      
                     return $value;
                 }
@@ -67,11 +67,10 @@ class StockTable extends \WP_List_Table {
 
             case 'status':
 
-            $myArray = json_decode($item->option_value, true);
                 
                 foreach ($myArray as $k=> $value) {
 
-                 if($k== '2'){
+                 if($k== 'status'){
                      
                      if ($value=='1') {
                         return 'enable';
@@ -116,12 +115,22 @@ class StockTable extends \WP_List_Table {
      * @return string
      */
     function column_option_name( $item ) {
+        $myArray = json_decode($item->option_value, true);
+        $option_name=null;
+        foreach ($myArray as $k=> $value) {
+
+                 if($k == 'option_name'){
+                     
+                    $option_name = $value;
+                }
+            }
+
 
         $actions           = array();
         $actions['edit']   = sprintf( '<a href="%s" data-id="%d" title="%s">%s</a>', admin_url( 'admin.php?page=stock&action=edit&id=' . $item->option_id ), $item->option_id, __( 'Edit this item', '' ), __( 'Edit', '' ) );
         $actions['delete'] = sprintf( '<a href="%s" class="submitdelete" data-id="%d" title="%s">%s</a>', admin_url( 'admin.php?page=stock&action=delete&id=' . $item->option_id ), $item->option_id, __( 'Delete this item', '' ), __( 'Delete', '' ) ) ;
 
-        return sprintf( '<a href="%1$s"><strong>%2$s</strong></a> %3$s', admin_url( 'admin.php?page=stock&action=view&id=' . $item->option_id ), $item->option_name, $this->row_actions( $actions ) );
+        return sprintf( '<a href="%1$s"><strong>%2$s</strong></a> %3$s', admin_url( 'admin.php?page=stock&action=view&id=' . $item->option_id ),$option_name, $this->row_actions( $actions ) );
     }
 
     /**
@@ -142,12 +151,7 @@ class StockTable extends \WP_List_Table {
      *
      * @return array
      */
-    function get_bulk_actions() {
-        $actions = array(
-            'trash'  => __( 'Move to Trash', '' ),
-        );
-        return $actions;
-    }
+  
 
     /**
      * Render the checkbox column
@@ -162,18 +166,8 @@ class StockTable extends \WP_List_Table {
         );
     }
 
-    function process_bulk_action() {
-      global $wpdb;
-      $page_url = admin_url( 'admin.php?page=stock' );
-      //$table_name = $wpdb->prefix . 'options';
-          if ('trash' === $this->current_action()) {
-            $ids = isset($_REQUEST['stock_id']) ? $_REQUEST['stock_id'] : array();
-            if (is_array($ids)) $ids = implode(',', $ids);
-                if (!empty($ids)) {
-                    $wpdb->query("DELETE FROM $table_name WHERE option_id IN($ids)");
-            }
-        }
-    }
+
+
     /**
      * Set the views
      *
@@ -197,7 +191,7 @@ class StockTable extends \WP_List_Table {
      * @return void
      */
     function prepare_items() {
-
+        global $wpdb;
         $columns               = $this->get_columns();
         $hidden                = array( );
         $sortable              = $this->get_sortable_columns();
@@ -218,9 +212,9 @@ class StockTable extends \WP_List_Table {
             $args['orderby'] = $_REQUEST['orderby'];
             $args['order']   = $_REQUEST['order'] ;
         }
-
+       
         $this->items  = stock_get_all_stock( $args );
-        $this->process_bulk_action();
+        
         $this->set_pagination_args( array(
             'total_items' => stock_get_stock_count(),
             'per_page'    => $per_page

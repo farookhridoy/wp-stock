@@ -64,7 +64,7 @@ class Form_Handler {
 
         $fields = array(
             'option_name' => '_stock_perse_dom_'.$option_name,
-            'option_value' => json_encode(array('0'=>$option_name,'1'=>$option_value,'2' => $status)),
+            'option_value' => json_encode(array('option_name'=>$option_name,'option_value'=>$option_value,'status' => $status)),
             'autoload' => $autoload,
             
         );

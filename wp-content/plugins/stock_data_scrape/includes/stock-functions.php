@@ -70,7 +70,7 @@ function stock_insert_stock( $args = array() ) {
         'option_name' => '',
         'option_value' => '',
         'autoload' => '',
-        'status' => '',
+        
 
     );
 
@@ -89,20 +89,11 @@ function stock_insert_stock( $args = array() ) {
     $row_id = (int) $args['option_id'];
     unset( $args['option_id'] );
 
-    if ( ! $row_id ) {
-
-        $args['date'] = current_time( 'mysql' );
-
-        // insert a new
-        if ( $wpdb->insert( $table_name, $args ) ) {
-            return $wpdb->insert_id;
-        }
-
-    } else {
-
+    if ( $row_id ) {
         // do update method here
         if ( $wpdb->update( $table_name, $args, array( 'option_id' => $row_id ) ) ) {
             return $row_id;
+            
         }
     }
 

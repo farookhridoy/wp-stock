@@ -1,7 +1,31 @@
 <div class="wrap">
     <h1><?php _e( 'Edit Current Data', '' ); ?> <a href="<?php echo admin_url( 'admin.php?page=stock' ); ?>" class="add-new-h2"><?php _e( 'Back To List', '' ); ?></a></h1>
 
-    <?php $item = stock_get_stock( $id ); ?>
+    <?php
+         $item = stock_get_stock( $id ); 
+             $myArray = json_decode($item->option_value, true);
+             $option_name=null;
+             $option_value=null;
+             $status=null;
+             foreach ($myArray as $k=> $value) {
+
+               if($k == 'option_name'){
+
+                    $option_name = $value;
+                }
+
+                if($k == 'option_value'){
+
+                    $option_value = $value;
+                }
+
+                if($k == 'status'){
+
+                    $status = $value;
+                }
+        }
+
+    ?>
 
     <form action="" method="post">
 
@@ -12,7 +36,7 @@
                         <label for="option_name">Company Symbol</label>
                     </th>
                     <td>
-                        <input type="text" name="option_name" id="option_name" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $item->option_name ); ?>" required="required" />
+                        <input type="text" name="option_name" id="option_name" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $option_name ); ?>" required="required" />
                         <span class="description">Company Symbol Name As Like "AAPL"</span>
                     </td>
                 </tr>
@@ -21,7 +45,7 @@
                         <label for="option_value">Market Symbol</label>
                     </th>
                     <td>
-                        <input type="text" name="option_value" id="option_value" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $item->option_value ); ?>" required="required" />
+                        <input type="text" name="option_value" id="option_value" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $option_value ); ?>" required="required" />
                         <span class="description">Market Symbol Name as Like "NASDQ"</span>
                     </td>
                 </tr>
@@ -32,8 +56,8 @@
                     </th>
                     <td>
                         <select name="status" id="status">
-                            <option value="1" <?php selected( $item->status, '1' ); ?>><?php echo __( 'enable,', '' ); ?></option>
-                            <option value="0" <?php selected( $item->status, '0' ); ?>><?php echo __( 'disable', '' ); ?></option>
+                            <option value="1" <?php selected( $status, '1' ); ?>><?php echo __( 'enable', '' ); ?></option>
+                            <option value="0" <?php selected( $status, '0' ); ?>><?php echo __( 'disable', '' ); ?></option>
                         </select>
                         <span class="description">For Disable and Enable Row</span>
                     </td>
