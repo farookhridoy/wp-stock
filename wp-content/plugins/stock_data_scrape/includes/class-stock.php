@@ -40,9 +40,20 @@ class Stock {
         $action = isset( $_GET['action'] ) ? $_GET['action'] : 'list';
         $id     = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
 
+        $file     = isset( $_GET['file'] ) ? $_GET['file'] : null;
+
        
 
         switch ($action) {
+          
+
+            case 'filedelete':
+
+                $delete_return = stock_scrap_delete($file);
+                
+                $template = dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
+                break;
+
             case 'delete':
 
                 $delete_return = stock_delete_stock($id);

@@ -54,6 +54,15 @@ function stock_get_stock( $id = 0 ) {
     return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'options WHERE option_id = %d', $id ) );
 }
 
+function stock_scrap_delete($file){
+    
+    if($file){             
+        @unlink(ABSPATH.WP_STOCK_PATH."/".$file);
+        return true;
+    }
+}
+
+
 function stock_delete_stock( $id = 0 ) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'options';
