@@ -86,7 +86,7 @@ function ibenic_send_file(){
 	header("Content-Disposition:attachment; filename={$file_new_name}");
 	header("Content-Type: application/force-download");
 
-	readfile("{$file_url}");
+	readfile(ABSPATH.WP_STOCK_PATH."/".$file);
 	exit();
 }
 
