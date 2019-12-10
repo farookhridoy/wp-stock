@@ -86,13 +86,20 @@ class Stock {
     }
 
     function scrping_page() {
+        ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
 
          include dirname( __FILE__ ) . '/views/scrap-data-list-duplicate.php';
+
+        echo ob_get_clean();
     }
 
     function scrping_file_list(){
+      ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
 
-        include dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
+
+      include dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
+
+      echo ob_get_clean();
 
     }
 }

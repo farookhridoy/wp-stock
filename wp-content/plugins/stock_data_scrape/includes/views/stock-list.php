@@ -9,6 +9,8 @@
             $list_table->prepare_items();
             $list_table->search_box( 'search', 'search_id' );
             $list_table->display();
+
+            //echo '<pre>'; print_r( _get_cron_array() ); echo '</pre>';
         ?>
     </form>
 </div>
