@@ -7,7 +7,6 @@
    Author URI: https://github.com/gmfaruk
 */
 
-//for create a folder in wp-content/uploads/ dir
 
 
  $upload = wp_upload_dir();
@@ -22,18 +21,28 @@ define('WP_STOCK_PATH',"wp-content/uploads/stockfile");
 
 add_action('init','ibenic_download_file');
 
-add_action('init', 'custom_plugin_function_event');
-function custom_plugin_function_event() {
+  
+add_filter( 'cron_schedules', 'cron_add_per_minute' );
 
-	ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
-
-    if (wp_next_scheduled('custom_plugin_action') == false) {
-        wp_schedule_event(time(), 'daily', 'custom_plugin_action');
-    }
-    add_action('custom_plugin_action', 'scrap_stock');
-
-    echo ob_get_clean();
+function cron_add_per_minute( $schedules ) {
+// Adds once weekly to the existing schedules.
+  $schedules['minute'] = array(
+    'interval' => 1440,
+    'display' => __( 'Once A Daily' )
+  );
+  return $schedules;
 }
+
+if (!wp_next_scheduled('cron_schedules_action')) {
+  wp_schedule_event( time(), 'minute', 'cron_schedules_action' );
+}
+add_action ( 'cron_schedules_action', 'scrap_stock' );
+
+/*function update_reservation_function() {
+  ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
+  include  dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
+  echo ob_get_clean();
+}*/
 // Send the file to download
 
 // end

@@ -233,8 +233,10 @@ function scrap_stock(){
                         echo' <tbody id="the-list">';
                         echo'<tr>';
                             foreach($ret as $k=>$v){
-                                echo'<td>'. strip_tags($v) . '</td>';
-                                $csv[$k] = $v;
+                                echo'<td>'. strval($v) . '</td>';
+                                $Key=strip_tags($k);
+                                $Val=strip_tags($v);
+                                $csv[$Key] = $Val;
 
                                 //$csv.= $option_name.','.$option_value.','.strip_tags($k).','.strip_tags($v)."\n";
                             }
@@ -315,3 +317,37 @@ function scrap_stock(){
         unset($html);
 
     }
+
+    function scrap_stock_fun(){
+
+            $upload = wp_upload_dir();
+            $directory = $upload['basedir'];
+            $directory = $directory . '/stockfile';
+            $path = $directory . '/'.date("Y-m-d").'.csv';
+            $handle = fopen($path, "r");
+
+            echo '<table class="wp-list-table widefat fixed striped stocks">';
+
+            if ($header) {
+                $csvcontents = fgetcsv($handle);
+                echo'<thead><tr>';
+                foreach ($csvcontents as $headercolumn) {
+
+                    echo'<th class="column-primary"><strong>$headercolumn</strong></th>';
+                }
+                echo '</tr></thead>';
+            }
+
+            while ($csvcontents = fgetcsv($handle)) {
+             echo' <tbody id="the-list">';
+             echo'<tr>';
+             foreach ($csvcontents as $column) {
+               echo "<td>$column</td>";
+           }
+           echo  '</tr>';
+
+       }
+       echo' </tbody></table>';
+
+       fclose($handle);
+   } 
