@@ -8,6 +8,7 @@
 */
 
 
+//for stock file folder
 
  $upload = wp_upload_dir();
  $upload_dir = $upload['basedir'];
@@ -16,16 +17,19 @@
     mkdir( $upload_dir, 0700 );
  }
 
+
+//end
+
 if(!defined('WP_STOCK_PATH')) 
 define('WP_STOCK_PATH',"wp-content/uploads/stockfile");
 
-add_action('init','ibenic_download_file');
 
-  
-add_filter( 'cron_schedules', 'cron_add_per_minute' );
 
+add_action('init','ibenic_download_file'); // for download stock scrap list.
+add_filter( 'cron_schedules', 'cron_add_per_minute' ); // for manual cron job link
+
+//cron job function start
 function cron_add_per_minute( $schedules ) {
-// Adds once weekly to the existing schedules.
   $schedules['minute'] = array(
     'interval' => 1440,
     'display' => __( 'Once A Daily' )
@@ -37,13 +41,7 @@ if (!wp_next_scheduled('cron_schedules_action')) {
   wp_schedule_event( time(), 'minute', 'cron_schedules_action' );
 }
 add_action ( 'cron_schedules_action', 'scrap_stock' );
-
-/*function update_reservation_function() {
-  ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
-  include  dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
-  echo ob_get_clean();
-}*/
-// Send the file to download
+// end cron job funtion
 
 // end
 include dirname( __File__ ) . "/includes/class-stock.php";

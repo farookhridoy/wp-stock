@@ -282,41 +282,59 @@ function scrap_stock(){
         require_once(Stock_PLUGIN_PATH.'/scrapingfile/simple_html_dom.php');
         //make dir and make csv file
 
-        $html = file_get_html($url);
-
-        $title =$html->find('h3[class="d-inline-block m-0"]',0);
-        //for company and market symbole//
-        preg_match('#\((.*?)\)#', $title, $match);
-        $match[1];
-        $exploded = explode(':', $match[1]);
-        $CompanySymbol=$exploded[1];
-        $MarketSymbol= $exploded[0];
-        //for company and market symbole//
-        $ret['Symbol']=$MarketSymbol.'/'.$CompanySymbol;
-        $key = '';
-        $val = '';
-        $flag=0;
-        foreach($html->find('table[class="bluetable"] tr') as $row) {
-            $key = $row->find('td', 0);
-            $k=strip_tags($key);
-
-            if ($flag>0) {
-                $val=$row->find('td', 1);
-
-                 $val = strip_tags($val);
-                $ret[$k] = $val;
-            }
-            $flag++;
-        }
-
-        return $ret;
+        $html_content = wp_remote_get($url);
         
-        // clean up memory
+        $body = $html_content['body'];
+        $html = str_get_html($body);
 
-        $html->clear();
+        if (!empty($html)){
+
+            $title =$html->find('h3[class="d-inline-block m-0"]',0);
+
+            //for company and market symbole//
+
+            preg_match('#\((.*?)\)#', $title, $match);
+
+            $match[1];
+
+            $exploded = explode(':', $match[1]);
+
+            $CompanySymbol=$exploded[1];
+            $MarketSymbol= $exploded[0];
+
+           
+            $companyName=current(explode(' ', strip_tags($title)));
+
+            //for company and market symbole//
+            $ret['Company Name']=$companyName;
+            $ret['Market Symbol/ Company Symbol']=$MarketSymbol.'/'.$CompanySymbol;
+            $key = '';
+            $val = '';
+            $flag=0;
+            foreach($html->find('table[class="bluetable"] tr') as $row) {
+                $key = $row->find('td', 0);
+                $k=strip_tags($key);
+    
+                if ($flag>0) {
+                    $val=$row->find('td', 1);
+    
+                     $val = strip_tags($val);
+                    $ret[$k] = $val;
+                }
+                $flag++;
+            }
+    
+            return $ret;
+            
+            // clean up memory
+    
+            $html->clear();
+        
+        }
         unset($html);
 
     }
+    
 
     function scrap_stock_fun(){
 
