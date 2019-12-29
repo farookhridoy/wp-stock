@@ -1,0 +1,5 @@
+1. Extract 'stock_data_scrape.zip'
+2. Upload 'stock_data_scrape' to Wordpress 'wp-content/plugins' directory
+3. Activate plugin from administrator panel
+4. Copy 'stock_data_scrape/template/StockList.php' to your current active theme
+5. Create a page where you want to show stock data in front end and assign 'StockList' template to it

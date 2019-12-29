@@ -22,7 +22,7 @@ class Form_Handler {
      */
     public function handle_form() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'options';
+        $table_name = $wpdb->prefix . 'stock_scrap';
 
         if ( ! isset( $_POST['submit_stock'] ) ) {
             return;
@@ -40,18 +40,18 @@ class Form_Handler {
         $page_url = admin_url( 'admin.php?page=stock' );
         $field_id = isset( $_POST['field_id'] ) ? intval( $_POST['field_id'] ) : 0;
 
-        $option_name = isset( $_POST['option_name'] ) ? sanitize_text_field( $_POST['option_name'] ) : '';
-        $option_value = isset( $_POST['option_value'] ) ? sanitize_text_field( $_POST['option_value'] ) : '';
-        $autoload = isset( $_POST['autoload'] ) ? sanitize_text_field( $_POST['autoload'] ) : '';
+        $company_symbol = isset( $_POST['company_symbol'] ) ? sanitize_text_field( $_POST['company_symbol'] ) : '';
+        $market_symbol = isset( $_POST['market_symbol'] ) ? sanitize_text_field( $_POST['market_symbol'] ) : '';
         $status = isset( $_POST['status'] ) ? sanitize_text_field( $_POST['status'] ) : '';
+        $created_at = isset( $_POST['created_at'] ) ? sanitize_text_field( $_POST['created_at'] ) : '';
 
         // some basic validation
-        if ( ! $option_name ) {
-            $errors[] = __( 'Error: Symbol Key is required', '' );
+        if ( ! $company_symbol ) {
+            $errors[] = __( 'Error: Company Symbol Key is required', '' );
         }
 
-        if ( ! $option_value ) {
-            $errors[] = __( 'Error: Exchange Name is required', '' );
+        if ( ! $market_symbol ) {
+            $errors[] = __( 'Error: Market_symbol Name is required', '' );
         }
 
         // bail out if error found
@@ -63,9 +63,10 @@ class Form_Handler {
         }
 
         $fields = array(
-            'option_name' => '_stock_perse_dom_'.$option_name,
-            'option_value' => json_encode(array('option_name'=>$option_name,'option_value'=>$option_value,'status' => $status)),
-            'autoload' => $autoload,
+            'company_symbol' => $company_symbol,
+            'market_symbol' => $market_symbol,
+            'status' => $status,
+            'created_at' => $created_at,
             
         );
 
@@ -76,7 +77,7 @@ class Form_Handler {
 
         } else {
 
-            $fields['option_id'] = $field_id;
+            $fields['id'] = $field_id;
 
             $insert_id = stock_insert_stock( $fields );
         }

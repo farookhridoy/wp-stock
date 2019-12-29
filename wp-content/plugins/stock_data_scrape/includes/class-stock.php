@@ -26,7 +26,7 @@ class Stock {
 
         add_submenu_page( 'stock', 'Stock', 'Stock', 'manage_options', 'stock', array( $this, 'plugin_page' ) );
         add_submenu_page( 'stock', 'Stock', 'Scraping', 'manage_options', 'stock-scraping', array( $this, 'scrping_page' ) );
-        add_submenu_page( 'stock', 'Stock', 'All Stock File', 'manage_options', 'stock-file-list', array( $this, 'scrping_file_list' ) );
+       
         add_submenu_page( 'stock', 'Stock', 'Upload stock list', 'manage_options', 'upload-stock-file-list', array( $this, 'upload_stock_file_list' ) );
     }
 
@@ -48,12 +48,7 @@ class Stock {
         switch ($action) {
           
 
-            case 'filedelete':
-
-                $delete_return = stock_scrap_delete($file);
-                
-                $template = dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
-                break;
+           
 
             case 'delete':
 
@@ -87,26 +82,18 @@ class Stock {
     }
 
     function scrping_page() {
-        ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
+        //ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
+         ini_set('max_execution_time', 0);  ignore_user_abort(true);
 
          include dirname( __FILE__ ) . '/views/scrap-data-list-duplicate.php';
 
         echo ob_get_clean();
     }
 
-    function scrping_file_list(){
-      ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
-
-
-      include dirname( __FILE__ ) . '/views/scrap-csv-file-list.php';
-
-      echo ob_get_clean();
-
-    }
-
+   
     function upload_stock_file_list(){
-      ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
-
+      //ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
+       ini_set('max_execution_time', 0); ignore_user_abort(true);
 
       include dirname( __FILE__ ) . '/views/upload-stock-file-list.php';
 

@@ -3,27 +3,7 @@
 
     <?php
          $item = stock_get_stock( $id ); 
-             $myArray = json_decode($item->option_value, true);
-             $option_name=null;
-             $option_value=null;
-             $status=null;
-             foreach ($myArray as $k=> $value) {
-
-               if($k == 'option_name'){
-
-                    $option_name = $value;
-                }
-
-                if($k == 'option_value'){
-
-                    $option_value = $value;
-                }
-
-                if($k == 'status'){
-
-                    $status = $value;
-                }
-        }
+             
 
     ?>
 
@@ -33,18 +13,18 @@
             <tbody>
                 <tr class="row-option-name">
                     <th scope="row">
-                        <label for="option_name">Symbol Key</label>
+                        <label for="company_symbol">Company Symbol</label>
                     </th>
                     <td>
-                      <input type="text" name="option_name" id="option_name" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $option_name ); ?>" readonly />
+                      <input type="text" name="company_symbol" id="company_symbol" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $item->company_symbol ); ?>" readonly />
                     </td>
                 </tr>
                 <tr class="row-option-value">
                     <th scope="row">
-                        <label for="option_value"><?php _e( 'Exchange Name', '' ); ?></label>
+                        <label for="market_symbol">Market Symbol</label>
                     </th>
                     <td>
-                       <input type="text" name="option_name" id="option_name" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $option_value ); ?>" readonly />
+                       <input type="text" name="option_name" id="option_name" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="<?php echo esc_attr( $item->market_symbol ); ?>" readonly />
                     </td>
                 </tr>
                 
@@ -54,7 +34,7 @@
                     </th>
                     <td>
 
-                        <?php if ($status =='1') {
+                        <?php if ($item->status =='1') {
                            echo 'enable';
                         }else{
                             echo 'disable';

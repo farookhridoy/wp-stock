@@ -9,136 +9,113 @@ require_once( $path_to_wp . '/wp-load.php' );
 $data=stock_cron();
 
 function stock_cron(){
-        global $wpdb;
+    global $wpdb,$limit;
+    $table_name = $wpdb->prefix .'stock_scrap';
 
-        $upload = wp_upload_dir();
-        $upload_dir = $upload['basedir'];
-        $upload_dir = $upload_dir . '/stockfile';
-        if (is_dir($upload_dir)) {
+    $offset=0;
+    $total_items = $wpdb->get_var("SELECT COUNT(id) FROM $table_name");
+    $totalPages = ceil($total_items / $limit);
 
-        $logfile = $upload_dir . '/'.date("Y-m-d").'.csv';
-        $fp = fopen($logfile, 'w');
+    for ($i = 0; $i <= $totalPages; $i++)
+    {
+        $alldata = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'stock_scrap ORDER BY id ASC LIMIT ' . $offset . ', ' . $limit );
 
-        $alldata = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'options WHERE autoload="stock"');
-            $counter=0;
-            $csv=[];
-            $parentcsv=[];
-	            if (count($alldata)>0) {
-	            	foreach ($alldata as $item) {
+         foreach ($alldata as $item) {
 
-	            		$myArray = json_decode($item->option_value, true);
-	            		$option_name=null; $option_value=null; $status=null;
-	            		foreach ($myArray as $k=> $value) {
-	            			if($k == 'option_name'){
-	            				$option_name = $value;
-	            			}
-	            			if($k == 'option_value'){
-	            				$option_value = $value;
-	            			}
-	            			if($k == 'status'){
-	            				$status = $value;
-	            			}
-	            		}
+            if ($item->status=='1') {
+                $ret=cron_scrapping_url('https://www.marketbeat.com/stocks/'.$item->market_symbol.'/'.$item->company_symbol.'/price-target/');
 
-	            		if ($status=='1') {
+                if ($ret) {
+                    $company_symbol=''; $updated_at='';
 
-	            			$ret=scrapping_url_cron('https://www.marketbeat.com/stocks/'.$option_value.'/'.$option_name.'/price-target/');
+                    foreach($ret as $k=>$v){ 
 
-	            			if ($ret) {
+                        if ($k=='company_symbol') {
+                            $company_symbol= $v;
+                        }
+                        if ($k=='updated_at') {
+                            $updated_at= $v;
+                        }
+                    }
+                    // New or edit?
+                    if ( $item->company_symbol==$company_symbol && $item->updated_at==$updated_at ) {
 
-	            				foreach($ret as $k=>$v){
+                    }else{
+                        $ret['id'] = $item->id;
 
-	            					$Key=strip_tags($k);
-	            					$Val=strip_tags($v);
-	            					$csv[$Key] = $Val;
-	            				}
+                        $insert_id = $wpdb->update( $table_name, $ret, array( 'id' => $item->id ) );
+                    }
 
-	            			}
+                    if ($insert_id) {
+                         echo "Data Inserted Successfully";
+                     } 
 
-	            		}
+                }//end ret
+            }//end status check
 
-	            		$parentcsv[]=$csv;
-	            		$counter++;
-	            	}
+        }//end main foreach
 
-	            	foreach ($parentcsv as $record)
-	            	{
-	            		$record_arr = array();
+        $offset=$offset+$limit;
 
-	            		foreach ($record as $value)
-	            		{
-	            			$record_arr[] = $value;
-	            		}
+    } //end for loop
+      
+}
 
-	            		if($i == 0)
-	            		{
-	            			fputcsv($fp, array_keys((array)$record));
-	            		}
-	            		fputcsv($fp, array_values($record_arr));
-
-	            		$i++;
-	            	}
-
-
-	            	fclose($fp);
-	            	echo 'Stock Data insert Successfully';
-	            }else{
-	            	echo 'Stock Data insert Unsuccessfully';
-	            }
-            
-            }
-
-    }    
-
-    function scrapping_url_cron($url) {
+    function cron_scrapping_url($url) {
 
         require_once(Stock_PLUGIN_PATH.'/scrapingfile/simple_html_dom.php');
-        //make dir and make csv file
-
         $html_content = wp_remote_get($url);
-        
+
         $body = $html_content['body'];
         $html = str_get_html($body);
+
         if (!empty($html)){
 
-        	$title =$html->find('h3[class="d-inline-block m-0"]',0);
-        	//for company and market symbole//
-        	preg_match('#\((.*?)\)#', $title, $match);
-
-        	$match[1];
-
-        	$exploded = explode(':', $match[1]);
-
-        	$CompanySymbol=$exploded[1];
-
-        	$MarketSymbol= $exploded[0];
-
-        	$companyName=current(explode(' ', strip_tags($title)));
+            $title =$html->find('h3[class="d-inline-block m-0"]',0);
+            preg_match('#\((.*?)\)#', $title, $match);
+            $match[1];
+            $exploded = explode(':', $match[1]);
+            $CompanySymbol=$exploded[1];
+            $MarketSymbol= $exploded[0];
+            $companyName=current(explode(' ', strip_tags($title)));
             //for company and market symbole//
-        	$ret['Company Name']=$companyName;
-        	$ret['Market Symbol/ Company Symbol']=$MarketSymbol.'/'.$CompanySymbol;
-        	$key = '';
-        	$val = '';
-        	$flag=0;
-        	foreach($html->find('table[class="bluetable"] tr') as $row) {
-        		$key = $row->find('td', 0);
-        		$k=strip_tags($key);
+            $ret['company_name']=$companyName;
+            $ret['market_symbol']=$MarketSymbol;
+            $ret['company_symbol']=$CompanySymbol;
 
-        		if ($flag>0) {
-        			$val=$row->find('td', 1);
+            $key = ''; $val = ''; $flag=0;
 
-        			$val = strip_tags($val);
-        			$ret[$k] = $val;
-        		}
-        		$flag++;
-        	}
+            foreach($html->find('table[class="scroll-table"] tr') as $row) {
+                $key = $row->find('td', 0); 
+                $k=strip_tags($key); 
+                $fk=slugifyCron($k);
 
-        	return $ret;
-
-        // clean up memory
-
-        	$html->clear();
+                if ($flag>0) {
+                    $val=$row->find('td', 1);
+                    $val = strip_tags($val);
+                    $ret[$fk] = $val;
+                }
+                $flag++;
+            }
+            
+            $ret['updated_at']=date("Y-m-d");
+            return $ret;
+            $html->clear();
         }
         unset($html);
-
+    }
+    
+    function slugifyCron($text)
+    {
+        
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '_', $text);
+        $text = strtolower($text);
+        if (empty($text)) {
+            return 'n-a';
+        }
+        return $text;
     }

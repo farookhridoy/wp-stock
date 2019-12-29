@@ -7,23 +7,23 @@
             <tbody>
                 <tr class="row-option-name">
                     <th scope="row">
-                        <label for="option_name">Company Symbol</label>
+                        <label for="company_symbol">Company Symbol</label>
                     </th>
                     <td>
-                        <input type="text" name="option_name" id="option_name" class="regular-text" placeholder="AAPL" value="" required="required" />
+                        <input type="text" name="company_symbol" id="company_symbol" class="regular-text" placeholder="AAPL" value="" required="required" />
                         <span class="description">Company Symbol Name As Like "AAPL"</span>
                     </td>
                 </tr>
                 <tr class="row-option-value">
                     <th scope="row">
-                        <label for="option_value">Market Symbol</label>
+                        <label for="market_symbol">Market Symbol</label>
                     </th>
                     <td>
-                        <input type="text" name="option_value" id="option_value" class="regular-text" placeholder="NASDQ" value="" required="required" />
+                        <input type="text" name="market_symbol" id="market_symbol" class="regular-text" placeholder="NASDQ" value="" required="required" />
                         <span class="description">Market Symbol Name as Like "NASDQ"</span>
                     </td>
                 </tr>
-                 <input type="hidden" name="autoload" id="autoload" class="regular-text" placeholder="<?php echo esc_attr( '', '' ); ?>" value="stock" />
+                <input type="hidden" name="created_at" id="created_at" value="<?php echo date("Y-m-d") ?>">
                 <tr class="row-status">
                     <th scope="row">
                         <label for="status">Status</label>

@@ -7,7 +7,7 @@ if ( ! class_exists ( 'WP_List_Table' ) ) {
 /**
  * List table class
  */
-class StockTable extends \WP_List_Table {
+class StockScrapTable extends \WP_List_Table {
 
     function __construct( ) {
        
@@ -40,34 +40,31 @@ class StockTable extends \WP_List_Table {
      * @return string
      */
     function column_default( $item, $column_name ) {
-       
-
+        
         switch ( $column_name ) {
             
-             case 'market_symbol':
-                return $item->market_symbol;
+            case 'company_name':
+                return $item->company_name;
 
-            case 'company_symbol':
-                return $item->company_symbol;
+            case 'symbol':
+                return $item->market_symbol.'/'.$item->company_symbol;
 
-            case 'created_at':
+            case 'consensus_rating':
+                return $item->consensus_rating;
+            case 'consensus_rating_score':
+                return $item->consensus_rating_score;
 
-                return $item->created_at;
+            case 'ratings_breakdown':
+                return $item->ratings_breakdown;
 
-            case 'status':
-                     
-            if ($item->status=='1') {
-                return 'enable';
-            }else{
-                return 'disable';
-            } 
+            case 'consensus_price_target':
+                return $item->consensus_price_target;
 
-            case 'action': 
+            case 'price_target_upside':
+                return $item->price_target_upside;
 
-                echo ' <a href="'.admin_url( 'admin.php?page=stock&action=view&id=' . $item->id ).'">View</a> ||';
-                echo ' <a href="'.admin_url( 'admin.php?page=stock&action=edit&id=' . $item->id ).'">Edit</a> ||';
-                echo ' <a href="'.admin_url( 'admin.php?page=stock&action=delete&id=' . $item->id ).'">Delete</a>';
-                
+            case 'updated_at':
+                return $item->updated_at;
 
             default:
                 return isset( $item->$column_name ) ? $item->$column_name : '';
@@ -83,10 +80,14 @@ class StockTable extends \WP_List_Table {
     function get_columns() {
         $columns = array(
             'cb'           => '<input type="checkbox" />',
-            'company_symbol'      => __( 'Company Symbol', '' ),
-            'market_symbol'      => __( 'Market Symbol', '' ),
-            'status'      => __( 'Status', '' ),
-            'action'      => __( 'Action', '' ),
+            'company_name'      => __( 'Company Name', '' ),
+            'symbol'      => __( 'Market/Company Symbol', '' ),
+            'consensus_rating'      => __( 'Consensus Rating', '' ),
+            'consensus_rating_score'      => __( 'Consensus Rating Score', '' ),
+            'ratings_breakdown'      => __( 'Ratings Breakdown', '' ),
+            'consensus_price_target'      => __( 'Consensus Price Target', '' ),
+            'price_target_upside'      => __( 'Price Target Upside', '' ),
+            'updated_at'      => __( 'Last Updated', '' ),
         );
 
         return $columns;
@@ -100,7 +101,6 @@ class StockTable extends \WP_List_Table {
      * @return string
      */
     function column_option_name( $item ) {
-
         
     }
 
@@ -111,8 +111,8 @@ class StockTable extends \WP_List_Table {
      */
     function get_sortable_columns() {
         $sortable_columns = array(
-            'company_symbol' => array( 'company_symbol', true )
-           
+            'company_name' => array( 'company_name', true ),
+            'price_target_upside' => array( 'price_target_upside', true ),
         );
 
         return $sortable_columns;
@@ -134,7 +134,7 @@ class StockTable extends \WP_List_Table {
      */
     function column_cb( $item ) {
         return sprintf(
-            '<input type="checkbox" name="stock_id[]" value="%d" />', $item->id
+            '<input type="checkbox" name="scrap_id[]" value="%d" />', $item->id
         );
     }
 
@@ -146,15 +146,7 @@ class StockTable extends \WP_List_Table {
      * @return array
      */
     public function get_views_() {
-        $status_links   = array();
-        $base_link      = admin_url( 'admin.php?page=sample-page' );
-
-        foreach ($this->counts as $key => $value) {
-            $class = ( $key == $this->page_status ) ? 'current' : 'status-' . $key;
-            $status_links[ $key ] = sprintf( '<a href="%s" class="%s">%s <span class="count">(%s)</span></a>', add_query_arg( array( 'status' => $key ), $base_link ), $class, $value['label'], $value['count'] );
-        }
-
-        return $status_links;
+        
     }
 
     /**
@@ -177,6 +169,7 @@ class StockTable extends \WP_List_Table {
         $offset                = ( $current_page -1 ) * $per_page;
         $this->page_status     = isset( $_GET['status'] ) ? sanitize_text_field( $_GET['status'] ) : '2';
 
+        $total_items = $wpdb->get_var("SELECT COUNT(id) FROM $table_name WHERE updated_at !='null' ");
         // only ncessary because we have sample data
         $args = array(
             'offset' => $offset,
@@ -190,14 +183,16 @@ class StockTable extends \WP_List_Table {
 
        
         if(isset($_POST['s']) && $_POST['s']!='') {
-            $this->items= stock_search_data($_POST['s']);    
+
+            $this->items= scrap_search_data($_POST['s']);
+
       } else {
 
-              $this->items  = stock_get_all_stock( $args );
+              $this->items  = scrap_get_all_stock( $args );
         }
 
         $this->set_pagination_args( array(
-            'total_items' => stock_get_stock_count(),
+            'total_items' => $total_items,
             'per_page'    => $per_page
         ) );
     }

@@ -13,7 +13,7 @@ function stock_get_all_stock( $args = array() ) {
     $defaults = array(
         'number'     => 20,
         'offset'     => 0,
-        'orderby'    => 'option_id',
+        'orderby'    => 'id',
         'order'      => 'ASC',
     );
 
@@ -22,7 +22,7 @@ function stock_get_all_stock( $args = array() ) {
     $items     = wp_cache_get( $cache_key, '' );
 
     if ( false === $items ) {
-        $items = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'options WHERE autoload="stock" ORDER BY ' . $args['orderby'] .' ' . $args['order'] .' LIMIT ' . $args['offset'] . ', ' . $args['number'] );
+        $items = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'stock_scrap  ORDER BY ' . $args['orderby'] .' ' . $args['order'] .' LIMIT ' . $args['offset'] . ', ' . $args['number'] );
 
         wp_cache_set( $cache_key, $items, '' );
     }
@@ -30,6 +30,29 @@ function stock_get_all_stock( $args = array() ) {
     return $items;
 }
 
+
+function stock_search_data($data){
+    global $wpdb;
+    
+
+    $args = array(
+        'number'     => 20,
+        'offset'     => 0,
+        'orderby'    => 'id',
+        'order'      => 'ASC',
+    );
+
+    $cache_key = 'stock-all';
+    $items     = wp_cache_get( $cache_key, '' );
+
+    if ( false === $items ) {
+        $items = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'stock_scrap WHERE status="1" AND `company_symbol` LIKE "%'.$data.'%"  ORDER BY ' . $args['orderby'] .' ' . $args['order'] .' LIMIT ' . $args['offset'] . ', ' . $args['number'] );
+
+        wp_cache_set( $cache_key, $items, '' );
+    }
+
+    return $items;
+}
 /**
  * Fetch all stock from database
  *
@@ -38,7 +61,7 @@ function stock_get_all_stock( $args = array() ) {
 function stock_get_stock_count() {
     global $wpdb;
 
-    return (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'options WHERE autoload="stock"' );
+    return (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'stock_scrap' );
 }
 
 /**
@@ -51,23 +74,14 @@ function stock_get_stock_count() {
 function stock_get_stock( $id = 0 ) {
     global $wpdb;
 
-    return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'options WHERE option_id = %d', $id ) );
+    return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'stock_scrap WHERE id = %d', $id ) );
 }
-
-function stock_scrap_delete($file){
-    
-    if($file){             
-        @unlink(ABSPATH.WP_STOCK_PATH."/".$file);
-        return true;
-    }
-}
-
 
 function stock_delete_stock( $id = 0 ) {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'options';
+    $table_name = $wpdb->prefix . 'stock_scrap';
     
-    return $wpdb->delete( $table_name, array( 'option_id' => $id ) );
+    return $wpdb->delete( $table_name, array( 'id' => $id ) );
 
 }
 
@@ -75,32 +89,33 @@ function stock_insert_stock( $args = array() ) {
     global $wpdb;
 
     $defaults = array(
-        'option_id' => null,
-        'option_name' => '',
-        'option_value' => '',
-        'autoload' => '',
+        'id' => null,
+        'company_symbol' => '',
+        'market_symbol' => '',
+        'status' => '',
+        'created_at' => '',
         
 
     );
 
     $args       = wp_parse_args( $args, $defaults );
-    $table_name = $wpdb->prefix . 'options';
+    $table_name = $wpdb->prefix . 'stock_scrap';
 
     // some basic validation
-    if ( empty( $args['option_name'] ) ) {
-        return new WP_Error( 'no-option_name', __( 'No Symbol Key provided.', '' ) );
+    if ( empty( $args['company_symbol'] ) ) {
+        return new WP_Error( 'no-company_symbol', __( 'No Company Symbol provided.', '' ) );
     }
-    if ( empty( $args['option_value'] ) ) {
-        return new WP_Error( 'no-option_value', __( 'No Exchange Name provided.', '' ) );
+    if ( empty( $args['market_symbol'] ) ) {
+        return new WP_Error( 'no-market_symbol', __( 'No Market Symbol provided.', '' ) );
     }
 
     // remove row id to determine if new or update
-    $row_id = (int) $args['option_id'];
-    unset( $args['option_id'] );
+    $row_id = (int) $args['id'];
+    unset( $args['id'] );
 
     if ( $row_id ) {
         // do update method here
-        if ( $wpdb->update( $table_name, $args, array( 'option_id' => $row_id ) ) ) {
+        if ( $wpdb->update( $table_name, $args, array( 'id' => $row_id ) ) ) {
             return $row_id;
             
         }
@@ -111,8 +126,8 @@ function stock_insert_stock( $args = array() ) {
 
 // Start the download if there is a request for that
 function ibenic_download_file(){
-   ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
-
+   //ob_start(); ini_set('max_execution_time', 0);  set_time_limit(0); ignore_user_abort(true);
+    ini_set('max_execution_time', 0); ignore_user_abort(true);
   if( isset( $_GET["file"] ) && isset( $_GET['download_file'] ) ) {
         ibenic_send_file();
     }
@@ -120,52 +135,10 @@ function ibenic_download_file(){
     echo ob_get_clean();
 }
 function ibenic_send_file(){
-    //get filedata
+    global $wpdb;
     $file = $_GET['file'];
-    $uploads = wp_get_upload_dir();
-    $theFile = $uploads['baseurl'] . "/stockfile/".$file;
-
-    if( ! $theFile ) {
-        return;
-    }
-  //clean the fileurl
-    $file_url  = stripslashes( trim( $theFile ) );
-  //get filename
-    $file_name = basename( $theFile );
-  //get fileextension
-
-    $file_extension = pathinfo($file_name);
-  //security check
-    $fileName = strtolower($file_url);
-
-    $whitelist = apply_filters( "ibenic_allowed_file_types", array('csv','xlsx') );
-
-    if(!in_array(end(explode('.', $fileName)), $whitelist))
-    {
-        exit('Invalid file!');
-    }
-    if(strpos( $file_url , '.php' ) == true)
-    {
-        die("Invalid file!");
-    }
-
-    $file_new_name = $file_name;
-    $content_type = "";
-  //check filetype
-    switch( $file_extension['extension'] ) {
-        case "csv": 
-        $content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; 
-        break;
-        case "xlsx": 
-        $content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; 
-        break;
-        
-        default: 
-        $content_type="application/force-download";
-    }
-
-    $content_type = apply_filters( "ibenic_content_type", $content_type, $file_extension['extension'] );
-
+    $content_type="application/force-download";
+    $file_new_name= $file.'.csv';
     header("Expires: 0");
     header("Cache-Control: no-cache, no-store, must-revalidate"); 
     header('Content-Transfer-Encoding: binary');
@@ -174,198 +147,210 @@ function ibenic_send_file(){
     header("Content-type: {$content_type}");
     header("Content-Disposition:attachment; filename={$file_new_name}");
     header("Content-Type: application/force-download");
+    
 
-    readfile(ABSPATH.WP_STOCK_PATH."/".$file);
-    exit();
+    $delimiter = ",";
+    //create a file pointer
+    $fp = fopen('php://output', 'w');
+    //set column headers
+
+    $header_row = array(
+        'Company Name',
+        'MarketSymbol',
+        'Company Symbol',
+        'Consensus Rating',
+        'Consensus Rating Score',
+        'Ratings Breakdown',
+        'Consensus Price Target',
+        'Price Target Upside',
+        'Last Updated',
+   );
+
+    fputcsv($fp, $header_row, $delimiter);
+        $Table_Name   = $wpdb->prefix . 'stock_scrap'; 
+        $sql_query    = $wpdb->prepare("SELECT * FROM $Table_Name", 1) ;
+        $rows         = $wpdb->get_results($sql_query, ARRAY_A);
+
+
+    if(!empty($rows)) 
+    {
+        foreach($rows as $Record)
+        {  
+          $OutputRecord = array($Record['company_name'],
+              $Record['market_symbol'],
+              $Record['company_symbol'],
+              $Record['consensus_rating'],
+              $Record['consensus_rating_score'],
+              $Record['ratings_breakdown'],
+              $Record['consensus_price_target'],
+              $Record['price_target_upside'],
+              $Record['updated_at']
+          );  
+          fputcsv($fp, $OutputRecord,$delimiter);       
+      }
+
+      
+  }
+
+
+     fpassthru($fp);
+    exit;         
 }
 
 function scrap_stock(){
-        global $wpdb;
+    global $wpdb,$limit;
+    $table_name = $wpdb->prefix .'stock_scrap';
 
-        $upload = wp_upload_dir();
-        $upload_dir = $upload['basedir'];
-        $upload_dir = $upload_dir . '/stockfile';
-        if (is_dir($upload_dir)) {
+    $offset=0;
+    $total_items = $wpdb->get_var("SELECT COUNT(id) FROM $table_name");
+    $totalPages = ceil($total_items / $limit);
 
-        $logfile = $upload_dir . '/'.date("Y-m-d").'.csv';
-        $fp = fopen($logfile, 'w');
-        
+    for ($i = 0; $i <= $totalPages; $i++)
+    {
+        $alldata = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'stock_scrap ORDER BY id ASC LIMIT ' . $offset . ', ' . $limit );
 
-        //$csv = "Company Symbol,Market Symbol,Key,Value \n";//Column headers
-        $alldata = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'options WHERE autoload="stock"');
-            $counter=0;
-            $csv=[];
-            $parentcsv=[];
-            foreach ($alldata as $item) {
+         foreach ($alldata as $item) {
 
-                $myArray = json_decode($item->option_value, true);
-                $option_name=null; $option_value=null; $status=null;
-                foreach ($myArray as $k=> $value) {
-                    if($k == 'option_name'){
-                        $option_name = $value;
-                    }
-                    if($k == 'option_value'){
-                        $option_value = $value;
-                    }
-                    if($k == 'status'){
-                        $status = $value;
-                    }
-                }
-                if ($status=='1') {
-                    
-                        $ret=scrapping_url('https://www.marketbeat.com/stocks/'.$option_value.'/'.$option_name.'/price-target/');
+            if ($item->status=='1') {
+                $ret=scrapping_url('https://www.marketbeat.com/stocks/'.$item->market_symbol.'/'.$item->company_symbol.'/price-target/');
 
-                        if ($ret) {
-                            
-                        echo '<table class="wp-list-table widefat fixed striped stocks">';
-                        echo'<thead><tr>';
-                        if ($counter<1) {
+                if ($ret) {
+                    $company_symbol=''; $updated_at='';
 
+                    foreach($ret as $k=>$v){ 
 
-                            foreach($ret as $k=>$v){
-
-                                echo'<th class="column-primary"><strong>'. strip_tags($k) .'</strong></th>';
-                            }
-
-                            echo '</tr></thead>';
+                        if ($k=='company_symbol') {
+                            $company_symbol= $v;
                         }
-
-                        echo' <tbody id="the-list">';
-                        echo'<tr>';
-                            foreach($ret as $k=>$v){
-                                echo'<td>'. strval($v) . '</td>';
-                                $Key=strip_tags($k);
-                                $Val=strip_tags($v);
-                                $csv[$Key] = $Val;
-
-                                //$csv.= $option_name.','.$option_value.','.strip_tags($k).','.strip_tags($v)."\n";
-                            }
-
-                           echo  '</tr>';
-                        echo' </tbody></table>';
+                        if ($k=='updated_at') {
+                            $updated_at= $v;
                         }
-
                     }
-                        $parentcsv[]=$csv;
-                    $counter++;
-                }
+                    // New or edit?
+                    if ( $item->company_symbol==$company_symbol && $item->updated_at==$updated_at ) {
 
-                foreach ($parentcsv as $record)
-                {
-                    $record_arr = array();
+                    }else{
+                        $ret['id'] = $item->id;
 
-                    foreach ($record as $value)
-                    {
-                        $record_arr[] = $value;
-                    }
+                        $insert_id = $wpdb->update( $table_name, $ret, array( 'id' => $item->id ) );
+                    } 
 
-                    if($i == 0)
-                    {
-                      fputcsv($fp, array_keys((array)$record));
-                  }
-                  fputcsv($fp, array_values($record_arr));
+                }//end ret
+            }//end status check
 
-                  $i++;
-              }
+        }//end main foreach
 
+        $offset=$offset+$limit;
 
-
-                //fwrite($fp, $ret);
-
-                fclose($fp);
-            }
-
-    }    
+    } //end for loop
+      
+}
 
     function scrapping_url($url) {
 
         require_once(Stock_PLUGIN_PATH.'/scrapingfile/simple_html_dom.php');
-        //make dir and make csv file
-
         $html_content = wp_remote_get($url);
-        
+
         $body = $html_content['body'];
         $html = str_get_html($body);
 
         if (!empty($html)){
 
             $title =$html->find('h3[class="d-inline-block m-0"]',0);
-
-            //for company and market symbole//
-
             preg_match('#\((.*?)\)#', $title, $match);
-
             $match[1];
-
             $exploded = explode(':', $match[1]);
-
             $CompanySymbol=$exploded[1];
             $MarketSymbol= $exploded[0];
-
-           
             $companyName=current(explode(' ', strip_tags($title)));
-
             //for company and market symbole//
-            $ret['Company Name']=$companyName;
-            $ret['Market Symbol/ Company Symbol']=$MarketSymbol.'/'.$CompanySymbol;
-            $key = '';
-            $val = '';
-            $flag=0;
-            foreach($html->find('table[class="bluetable"] tr') as $row) {
-                $key = $row->find('td', 0);
-                $k=strip_tags($key);
-    
+            $ret['company_name']=$companyName;
+            $ret['market_symbol']=$MarketSymbol;
+            $ret['company_symbol']=$CompanySymbol;
+
+            $key = ''; $val = ''; $flag=0;
+
+            foreach($html->find('table[class="scroll-table"] tr') as $row) {
+                $key = $row->find('td', 0); 
+                $k=strip_tags($key); 
+                $fk=slugify($k);
+
                 if ($flag>0) {
                     $val=$row->find('td', 1);
-    
-                     $val = strip_tags($val);
-                    $ret[$k] = $val;
+                    $val = strip_tags($val);
+                    $ret[$fk] = $val;
                 }
                 $flag++;
             }
-    
-            return $ret;
             
-            // clean up memory
-    
+            $ret['updated_at']=date("Y-m-d");
+            return $ret;
             $html->clear();
-        
         }
         unset($html);
-
     }
     
+    function slugify($text)
+    {
+        
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = trim($text, '-');
+        $text = preg_replace('~-+~', '_', $text);
+        $text = strtolower($text);
+        if (empty($text)) {
+            return 'n-a';
+        }
+        return $text;
+    }
 
-    function scrap_stock_fun(){
 
-            $upload = wp_upload_dir();
-            $directory = $upload['basedir'];
-            $directory = $directory . '/stockfile';
-            $path = $directory . '/'.date("Y-m-d").'.csv';
-            $handle = fopen($path, "r");
+   // for scrapping data
 
-            echo '<table class="wp-list-table widefat fixed striped stocks">';
+   function scrap_get_all_stock( $args = array() ) {
+    global $wpdb;
 
-            if ($header) {
-                $csvcontents = fgetcsv($handle);
-                echo'<thead><tr>';
-                foreach ($csvcontents as $headercolumn) {
+    $defaults = array(
+        'number'     => 20,
+        'offset'     => 0,
+        'orderby'    => 'id',
+        'order'      => 'ASC',
+    );
 
-                    echo'<th class="column-primary"><strong>$headercolumn</strong></th>';
-                }
-                echo '</tr></thead>';
-            }
+    $args      = wp_parse_args( $args, $defaults );
+    $cache_key = 'scrapp-all';
+    $items     = wp_cache_get( $cache_key, '' );
 
-            while ($csvcontents = fgetcsv($handle)) {
-             echo' <tbody id="the-list">';
-             echo'<tr>';
-             foreach ($csvcontents as $column) {
-               echo "<td>$column</td>";
-           }
-           echo  '</tr>';
+    if ( false === $items ) {
+        $items = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'stock_scrap WHERE updated_at !="null" AND company_name !="'.null.'" ORDER BY ' . $args['orderby'] .' ' . $args['order'] .' LIMIT ' . $args['offset'] . ', ' . $args['number'] );
 
-       }
-       echo' </tbody></table>';
+        wp_cache_set( $cache_key, $items, '' );
+    }
 
-       fclose($handle);
-   } 
+    return $items;
+}
+
+
+function scrap_search_data($data){
+    global $wpdb;
+    
+
+    $args = array(
+        'number'     => 20,
+        'offset'     => 0,
+        'orderby'    => 'id',
+        'order'      => 'ASC',
+    );
+
+    $cache_key = 'scrapp-all';
+    $items     = wp_cache_get( $cache_key, '' );
+
+    if ( false === $items ) {
+        $items = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'stock_scrap WHERE updated_at !="null" AND company_name LIKE "%'.$_POST['s'].'%" ' );
+
+        wp_cache_set( $cache_key, $items, '' );
+    }
+
+    return $items;
+}
